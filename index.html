@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Resizer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Cropper.js CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles for enhanced visual appeal and responsiveness */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0e7ff; /* Lighter blue/purple tint for a soft, modern background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 16px; /* Slightly more rounded corners */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); /* Stronger, softer shadow */
+            padding: 40px; /* Increased padding */
+            width: 100%;
+            max-width: 960px; /* Slightly wider container */
+            display: flex;
+            flex-direction: column;
+            gap: 32px; /* Increased gap between sections */
+        }
+        h1 {
+            color: #2c3e50; /* Darker, more professional heading color */
+            font-size: 2.5rem; /* Larger heading */
+            font-weight: 700; /* Bolder */
+            letter-spacing: -0.025em; /* Slightly tighter letter spacing */
+        }
+        h2 {
+            color: #34495e; /* Slightly lighter than H1 */
+            font-size: 2rem;
+            font-weight: 600;
+        }
+        label {
+            color: #4a5568; /* Darker gray for labels */
+            font-weight: 500; /* Medium weight */
+            margin-bottom: 4px; /* Small margin below label */
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .input-field {
+            padding: 12px 16px; /* More padding */
+            border: 1px solid #cbd5e1; /* Lighter border */
+            border-radius: 10px; /* More rounded */
+            font-size: 17px; /* Slightly larger font */
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            background-color: #f8fafc; /* Very light background for inputs */
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo-500 for focus */
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3); /* Soft indigo shadow on focus */
+        }
+        .btn {
+            padding: 14px 24px; /* More padding for buttons */
+            border-radius: 10px; /* Consistent rounding */
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px; /* More gap for icon/text */
+            font-size: 17px;
+        }
+        .btn-primary {
+            background-image: linear-gradient(to right, #6366f1, #8b5cf6); /* Gradient background (Indigo to Violet) */
+            color: #ffffff;
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3); /* Soft shadow */
+        }
+        .btn-primary:hover {
+            background-image: linear-gradient(to right, #4f46e5, #7c3aed); /* Darker gradient on hover */
+            transform: translateY(-2px); /* Lift effect */
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(99, 102, 241, 0.2);
+        }
+        .btn-secondary {
+            background-color: #e2e8f0; /* Gray-200 */
+            color: #4a5568; /* Darker gray text */
+            border: 1px solid #cbd5e1;
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e1; /* Gray-300 */
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .btn-secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        .image-area {
+            min-height: 350px; /* Taller image area */
+            background-color: #f0f4f8; /* Light blue-gray background */
+            border: 2px dashed #a7b7c7; /* Darker, more prominent dashed border */
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05); /* Inner shadow for depth */
+        }
+        .image-area img {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+        .preview-canvas {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px; /* Consistent rounding */
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); /* Soft shadow for preview */
+        }
+        .message {
+            padding: 16px; /* More padding */
+            border-radius: 10px; /* Consistent rounding */
+            font-size: 15px; /* Slightly larger font */
+            text-align: center;
+            font-weight: 500;
+        }
+        .message-info {
+            background-color: #eef2ff; /* Very light indigo */
+            color: #4338ca; /* Darker indigo */
+            border: 1px solid #c7d2fe;
+        }
+        .message-error {
+            background-color: #ffebeb; /* Very light red */
+            color: #dc2626; /* Darker red */
+            border: 1px solid #fecaca;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #ffffff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Ad placeholder styling */
+        .ad-placeholder {
+            background-color: #f0f8ff; /* Light blue background */
+            border: 1px dashed #a7d9f7; /* Light blue dashed border */
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #60a5fa; /* Blue text */
+            margin-top: 24px; /* Space above ad */
+            margin-bottom: 24px; /* Space below ad */
+            min-height: 120px; /* Minimum height for a banner ad, allows content to expand */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 text-center mb-4">Image Resizer</h1>
+
+        <!-- File Upload Section -->
+        <div class="input-group">
+            <label for="imageUpload" class="text-gray-700 font-medium">Upload Image:</label>
+            <input type="file" id="imageUpload" accept="image/*" class="input-field p-2">
+        </div>
+
+        <!-- Image Display and Cropper Area -->
+        <div class="image-area flex items-center justify-center p-4" id="imageContainer">
+            <img id="imageToCrop" src="" alt="Upload your image" class="max-w-full max-h-full hidden">
+            <p id="uploadPrompt" class="text-gray-500">Upload an image to start cropping and resizing.</p>
+        </div>
+
+        <!-- Resize and Optimize Inputs -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6"> <!-- Increased gap -->
+            <div class="input-group">
+                <label for="unitSelect" class="text-gray-700 font-medium">Measurement Unit:</label>
+                <select id="unitSelect" class="input-field">
+                    <option value="px">Pixels (px)</option>
+                    <option value="cm">Centimeters (cm)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="targetWidth" class="text-gray-700 font-medium">Target Width (Optional):</label>
+                <input type="number" id="targetWidth" class="input-field" placeholder="e.g., 800">
+            </div>
+            <div class="input-group">
+                <label for="targetHeight" class="text-gray-700 font-medium">Target Height (Optional):</label>
+                <input type="number" id="targetHeight" class="input-field" placeholder="e.g., 600">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6"> <!-- Increased gap -->
+            <div class="input-group">
+                <label for="minFileSize" class="text-gray-700 font-medium">Min File Size (KB):</label>
+                <input type="number" id="minFileSize" class="input-field" placeholder="e.g., 30">
+            </div>
+            <div class="input-group">
+                <label for="maxFileSize" class="text-gray-700 font-medium">Max File Size (KB):</label>
+                <input type="number" id="maxFileSize" class="input-field" placeholder="e.g., 40">
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button id="applyCropResizeBtn" class="btn btn-primary" disabled>
+                <span id="loadingSpinner" class="loading-spinner hidden"></span>
+                <span id="buttonText">Apply Crop & Resize</span>
+            </button>
+            <button id="downloadBtn" class="btn btn-secondary" disabled>
+                Download Image
+            </button>
+        </div>
+
+        <!-- Message Area -->
+        <div id="messageArea" class="message hidden"></div>
+
+        <!-- Ad Placeholder -->
+        <div class="ad-placeholder">
+            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4144342513572829"
+             crossorigin="anonymous"></script>
+            <!-- Ad HZ -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-4144342513572829"
+                 data-ad-slot="9230842310"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="mt-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2 text-center">Preview</h2>
+            <p id="previewDimensions" class="text-center text-gray-600 text-sm mb-4 hidden"></p>
+            <canvas id="previewCanvas" class="preview-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Cropper.js JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <script>
+        // DOM Elements
+        const imageUpload = document.getElementById('imageUpload');
+        const imageToCrop = document.getElementById('imageToCrop');
+        const imageContainer = document.getElementById('imageContainer');
+        const uploadPrompt = document.getElementById('uploadPrompt');
+        const unitSelect = document.getElementById('unitSelect');
+        const targetWidthInput = document.getElementById('targetWidth');
+        const targetHeightInput = document.getElementById('targetHeight');
+        const minFileSizeInput = document.getElementById('minFileSize');
+        const maxFileSizeInput = document.getElementById('maxFileSize');
+        const applyCropResizeBtn = document.getElementById('applyCropResizeBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const messageArea = document.getElementById('messageArea');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const buttonText = document.getElementById('buttonText');
+        const previewDimensions = document.getElementById('previewDimensions'); // New element for dimensions
+
+        // Global variables
+        let cropperInstance = null;
+        let finalBlob = null; // Stores the final processed image blob for download
+
+        // Conversion factor: 1 inch = 2.54 cm, 1 inch = 96 pixels (standard web DPI)
+        const CM_TO_PX_FACTOR = 96 / 2.54; // Approximately 37.795 pixels per cm
+
+        /**
+         * Displays a message to the user.
+         * @param {string} message - The message text.
+         * @param {string} type - 'info' or 'error' for styling.
+         */
+        function showMessage(message, type = 'info') {
+            messageArea.textContent = message;
+            messageArea.className = `message ${type === 'error' ? 'message-error' : 'message-info'}`;
+            messageArea.classList.remove('hidden');
+        }
+
+        /**
+         * Clears any displayed messages.
+         */
+        function clearMessage() {
+            messageArea.classList.add('hidden');
+            messageArea.textContent = '';
+        }
+
+        /**
+         * Sets the loading state for the button.
+         * @param {boolean} isLoading - True to show loading, false to hide.
+         */
+        function setLoading(isLoading) {
+            if (isLoading) {
+                loadingSpinner.classList.remove('hidden');
+                buttonText.textContent = 'Processing...';
+                applyCropResizeBtn.disabled = true;
+                downloadBtn.disabled = true;
+            } else {
+                loadingSpinner.classList.add('hidden');
+                buttonText.textContent = 'Apply Crop & Resize';
+                applyCropResizeBtn.disabled = false;
+                // Only enable download if there's a finalBlob
+                if (finalBlob) {
+                    downloadBtn.disabled = false;
+                }
+            }
+        }
+
+        /**
+         * Handles image file selection by the user.
+         * Reads the file and initializes the Cropper.js instance.
+         * @param {Event} event - The change event from the file input.
+         */
+        imageUpload.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                clearMessage();
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                showMessage('Please upload an image file (e.g., JPG, PNG, GIF).', 'error');
+                // Reset file input
+                imageUpload.value = '';
+                return;
+            }
+
+            clearMessage();
+            setLoading(true); // Show loading while image is being read
+            downloadBtn.disabled = true; // Disable download until new image is processed
+            previewDimensions.classList.add('hidden'); // Hide dimensions until new preview
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imageToCrop.src = e.target.result;
+                imageToCrop.classList.remove('hidden'); // Show the image element
+                uploadPrompt.classList.add('hidden'); // Hide the prompt
+
+                // Destroy previous cropper instance if it exists
+                if (cropperInstance) {
+                    cropperInstance.destroy();
+                }
+
+                // Initialize Cropper.js
+                cropperInstance = new Cropper(imageToCrop, {
+                    aspectRatio: NaN, // Allow free cropping initially
+                    viewMode: 1, // Restrict the crop box to not exceed the canvas
+                    autoCropArea: 0.8, // Initial crop area percentage
+                    responsive: true,
+                    background: false, // Hide the grid background
+                    ready() {
+                        // Set aspect ratio if target dimensions are provided
+                        updateCropperAspectRatio();
+                        applyCropResizeBtn.disabled = false; // Enable button once cropper is ready
+                        setLoading(false); // Hide loading
+                    }
+                });
+            };
+            reader.onerror = function() {
+                showMessage('Failed to read image file.', 'error');
+                setLoading(false);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        /**
+         * Converts a value from the selected unit to pixels.
+         * @param {number} value - The value to convert.
+         * @param {string} unit - The unit ('px' or 'cm').
+         * @returns {number} The converted value in pixels.
+         */
+        function convertToPixels(value, unit) {
+            if (unit === 'cm') {
+                return value * CM_TO_PX_FACTOR;
+            }
+            return value; // Already in pixels
+        }
+
+        /**
+         * Event listener for changes in target width/height inputs or unit selection.
+         * Updates the cropper's aspect ratio if a cropper instance exists.
+         */
+        targetWidthInput.addEventListener('input', updateCropperAspectRatio);
+        targetHeightInput.addEventListener('input', updateCropperAspectRatio);
+        unitSelect.addEventListener('change', updateCropperAspectRatio);
+
+        function updateCropperAspectRatio() {
+            if (cropperInstance) {
+                const unit = unitSelect.value;
+                const width = parseFloat(targetWidthInput.value);
+                const height = parseFloat(targetHeightInput.value);
+
+                const isWidthValid = !isNaN(width) && width > 0;
+                const isHeightValid = !isNaN(height) && height > 0;
+
+                if (isWidthValid && isHeightValid) {
+                    // If both are valid, set the aspect ratio based on user input
+                    cropperInstance.setAspectRatio(convertToPixels(width, unit) / convertToPixels(height, unit));
+                } else {
+                    // If either or both are invalid/empty, allow free cropping
+                    cropperInstance.setAspectRatio(NaN);
+                }
+            }
+        }
+
+        /**
+         * Applies the crop, resizes the image, optimizes its size, and displays the preview.
+         */
+        applyCropResizeBtn.addEventListener('click', async function() {
+            if (!cropperInstance) {
+                showMessage('Please upload an image first.', 'error');
+                return;
+            }
+
+            const unit = unitSelect.value;
+            const widthInputVal = parseFloat(targetWidthInput.value);
+            const heightInputVal = parseFloat(targetHeightInput.value);
+            const minFileSizeKB = parseFloat(minFileSizeInput.value);
+            const maxFileSizeKB = parseFloat(maxFileSizeInput.value);
+
+            // Validate file size inputs
+            if (isNaN(minFileSizeKB) || minFileSizeKB < 0) {
+                showMessage('Please enter a valid Minimum File Size (KB, 0 or greater).', 'error');
+                return;
+            }
+            if (isNaN(maxFileSizeKB) || maxFileSizeKB <= 0) {
+                showMessage('Please enter a valid Maximum File Size (KB, greater than 0).', 'error');
+                return;
+            }
+            if (minFileSizeKB > maxFileSizeKB) {
+                showMessage('Minimum File Size cannot be greater than Maximum File Size.', 'error');
+                return;
+            }
+
+            clearMessage();
+            setLoading(true);
+            previewDimensions.classList.add('hidden'); // Hide dimensions during processing
+
+            try {
+                let croppedCanvasOptions = {
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
+                };
+
+                const isWidthValid = !isNaN(widthInputVal) && widthInputVal > 0;
+                const isHeightValid = !isNaN(heightInputVal) && heightInputVal > 0;
+
+                if (isWidthValid && isHeightValid) {
+                    // Both width and height are provided and valid, use them
+                    croppedCanvasOptions.width = convertToPixels(widthInputVal, unit);
+                    croppedCanvasOptions.height = convertToPixels(heightInputVal, unit);
+                } else if (isWidthValid) {
+                    // Only width is provided, scale height proportionally
+                    croppedCanvasOptions.width = convertToPixels(widthInputVal, unit);
+                    // Cropper.js will automatically calculate height to maintain aspect ratio
+                } else if (isHeightValid) {
+                    // Only height is provided, scale width proportionally
+                    croppedCanvasOptions.height = convertToPixels(heightInputVal, unit);
+                    // Cropper.js will automatically calculate width to maintain aspect ratio
+                }
+                // If neither is valid, croppedCanvasOptions remains with only smoothing options,
+                // which makes getCroppedCanvas() use the cropped area's exact dimensions.
+
+                // 1. Get the cropped image as a canvas
+                const croppedCanvas = cropperInstance.getCroppedCanvas(croppedCanvasOptions);
+
+                // 2. Optimize the image size using the maximum file size as the primary target
+                finalBlob = await optimizeImageSize(croppedCanvas, maxFileSizeKB);
+
+                // 3. Display preview
+                const ctx = previewCanvas.getContext('2d');
+                const img = new Image();
+                img.onload = function() {
+                    previewCanvas.width = img.width;
+                    previewCanvas.height = img.height;
+                    ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    URL.revokeObjectURL(img.src); // Clean up object URL
+                    setLoading(false);
+                    downloadBtn.disabled = false;
+
+                    const finalSizeKB = (finalBlob.size / 1024);
+                    let message = '';
+                    let messageType = 'info';
+
+                    // Display actual dimensions of the previewed image
+                    previewDimensions.textContent = `Actual Dimensions: ${previewCanvas.width}px x ${previewCanvas.height}px`;
+                    previewDimensions.classList.remove('hidden');
+
+
+                    if (finalSizeKB > maxFileSizeKB) {
+                        // Case where even at lowest quality, it's still too big
+                        message = `Error: Could not compress image to target maximum size (${maxFileSizeKB} KB). The smallest possible size for these dimensions is ${finalSizeKB.toFixed(2)} KB. Please try reducing target dimensions or increasing the maximum file size.`;
+                        messageType = 'error';
+                    } else if (finalSizeKB < minFileSizeKB) {
+                        // Case where it compressed very well, below the minimum
+                        message = `Image processed successfully! Final size: ${finalSizeKB.toFixed(2)} KB. (Note: This is the highest quality achievable within your maximum file size limit. The image compressed more efficiently than your minimum target. If you need a larger file, consider increasing the minimum file size or accepting a higher maximum.)`;
+                        messageType = 'info'; // Still an info, but with a nuance
+                    } else {
+                        // Ideal case: within the range
+                        message = `Image processed successfully! Final size: ${finalSizeKB.toFixed(2)} KB. (Within your target range of ${minFileSizeKB}-${maxFileSizeKB} KB.)`;
+                        messageType = 'info';
+                    }
+                    showMessage(message, messageType);
+                };
+                img.onerror = function() {
+                    showMessage('Failed to load processed image for preview.', 'error');
+                    setLoading(false);
+                };
+                img.src = URL.createObjectURL(finalBlob);
+
+            } catch (error) {
+                console.error('Error during image processing:', error);
+                showMessage(`Error processing image: ${error.message || 'An unknown error occurred.'}`, 'error');
+                    setLoading(false);
+                downloadBtn.disabled = true;
+            }
+        });
+
+        /**
+         * Optimizes the image quality to meet a target maximum file size using a binary search approach.
+         * It prioritizes staying below the target maximum size.
+         * @param {HTMLCanvasElement} canvas - The canvas containing the image to optimize.
+         * @param {number} targetMaxFileSizeKB - The target maximum file size in kilobytes.
+         * @returns {Promise<Blob>} A promise that resolves with the optimized image Blob.
+         */
+        async function optimizeImageSize(canvas, targetMaxFileSizeKB) {
+            const targetMaxSizeBytes = targetMaxFileSizeKB * 1024;
+            let low = 0;
+            let high = 1;
+            let bestQuality = 0.8; // Start with a good quality for initial check
+            let bestBlob = null;
+
+            // Function to convert canvas to blob with a given quality
+            const getBlob = (quality) => {
+                return new Promise(resolve => {
+                    // Always output as JPEG for consistent size control
+                    canvas.toBlob(resolve, 'image/jpeg', quality);
+                });
+            };
+
+            // Binary search to find the highest quality that stays within the target max size
+            for (let i = 0; i < 15; i++) { // Increased iterations for finer control
+                const mid = (low + high) / 2;
+                const currentBlob = await getBlob(mid);
+
+                if (currentBlob.size <= targetMaxSizeBytes) {
+                    bestBlob = currentBlob;
+                    bestQuality = mid;
+                    low = mid; // Try for higher quality
+                } else {
+                    high = mid; // Need lower quality
+                }
+            }
+
+            // After binary search, ensure we return a blob.
+            // If bestBlob is null (e.g., if even quality 0 is too large), try quality 0.
+            if (!bestBlob) {
+                bestBlob = await getBlob(0); // Get the lowest possible quality
+            }
+
+            return bestBlob;
+        }
+
+        /**
+         * Handles the download of the processed image.
+         */
+        downloadBtn.addEventListener('click', function() {
+            if (finalBlob) {
+                const url = URL.createObjectURL(finalBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                // Suggest a filename, e.g., 'resized_image_800x600.jpeg'
+                a.download = `resized_image_${previewCanvas.width}x${previewCanvas.height}.jpeg`; // Use actual preview dimensions for filename
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url); // Clean up the object URL
+            } else {
+                showMessage('No image to download. Please process an image first.', 'error');
+            }
+        });
+
+        // Initialize button states
+        applyCropResizeBtn.disabled = true;
+        downloadBtn.disabled = true;
+    </script>
+</body>
+</html>
